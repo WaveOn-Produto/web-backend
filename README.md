@@ -1,75 +1,68 @@
-# 🧰 Projeto Backend – Grupo 8 – Processo Trainee CJR
+# WaveON 🌊
 
-> Repositório responsável pelo backend da aplicação do grupo 8, voltado ao processo trainee da **CJR**.  
-> Tecnologias previstas: **Node.js**, **Next.js**, **PostgreSQL**
->  
-> Este README serve como base inicial — detalhes da lógica da aplicação serão definidos à medida que o projeto evolui.
+## Sobre o Projeto
+WaveON é um sistema de gestão e cadastro para serviços de lavagem de carros a domicílio, focado em oferecer a melhor experiência tanto para os clientes quanto para os prestadores de serviço.
 
----
+## Documentação
+A documentação completa do projeto está disponível em: [WaveON Docs](https://mdsreq-fga-unb.github.io/2025.2-T01-WaveOn)
 
-## 📋 Membros do Grupo
+> Os arquivos da documentação do projeto se encontram na branch [docs](https://github.com/mdsreq-fga-unb/2025.2-T01-WaveOn/tree/docs). A branch main será usada apenas para entregas de releases e versões estáveis. O desenvolvimento acontecerá na branch dev e em branchs derivadas da mesma.
 
-<table align="center">
+# 👥 Nossa Equipe
+<div align="center">
+<table>
   <tr>
     <td align="center">
-      <img src="https://avatars.githubusercontent.com/u/166563802?v=4" width="150" height="150" style="border-radius:50%;" alt="Guilherme Negreiros"/><br>
-      <b>Guilherme Negreiros</b><br>
-      <a href="https://github.com/guin409">guin409</a>
+      <img src="https://mdsreq-fga-unb.github.io/2025.2-T01-WaveOn/img/bernardo_watanabi.jpg" width="150" style="border-radius:50%;" /><br>
+      <b>Bernardo Watanabe</b><br>Líder
     </td>
     <td align="center">
-      <img src="https://avatars.githubusercontent.com/u/87036806?v=4" width="150" height="150" style="border-radius:50%;" alt="Luís Cunha"/><br>
-      <b>Luís Cunha</b><br>
-      <a href="https://github.com/cunha-luiss">cunha-luiss</a>
+      <img src="https://mdsreq-fga-unb.github.io/2025.2-T01-WaveOn/img/Bernardo_broetto.jpg" width="150" style="border-radius:50%;" /><br>
+      <b>Bernardo Broetto</b>
     </td>
     <td align="center">
-      <img src="https://avatars.githubusercontent.com/u/107566329?v=4" width="150" height="150" style="border-radius:50%;" alt="Leonardo Lopes"/><br>
-      <b>Leonardo Lopes</b><br>
-      <a href="https://github.com/Leonardo-LC">Leonardo-LC</a>
+      <img src="https://mdsreq-fga-unb.github.io/2025.2-T01-WaveOn/img/Douglas.jpg" width="150" style="border-radius:50%;" /><br>
+      <b>Douglas Wilson</b>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="https://mdsreq-fga-unb.github.io/2025.2-T01-WaveOn/img/Eduardo.jpeg" width="150" style="border-radius:50%;" /><br>
+      <b>Eduardo Ribeiro</b>
     </td>
     <td align="center">
-      <img src="https://avatars.githubusercontent.com/u/227692461?v=4" width="150" height="150" style="border-radius:50%;" alt="Vinicius"/><br>
-      <b>Vinicius</b><br>
-      <a href="https://github.com/ViniciusA05">ViniciusA05</a>
+      <img src="https://mdsreq-fga-unb.github.io/2025.2-T01-WaveOn/img/Guilherme.jpg" width="150" style="border-radius:50%;" /><br>
+      <b>Guilherme Negreiros</b>
+    </td>
+    <td align="center">
+      <img src="https://mdsreq-fga-unb.github.io/2025.2-T01-WaveOn/img/anna_clara.jpg" width="150" style="border-radius:50%;" /><br>
+      <b>Anna Clara Cardoso</b>
     </td>
   </tr>
 </table>
+</div>
+
+# Como contribuir  
+
+As boas práticas para contribuir com este repositório — incluindo **commits**, **branches**, **issues** e **pull requests** — estão documentadas na branch [docs](https://github.com/mdsreq-fga-unb/2025.2-T01-WaveOn/tree/docs), na pasta [Políticas da Equipe](https://github.com/mdsreq-fga-unb/2025.2-T01-WaveOn/tree/docs/docs/politicas_equipe).  
+
+Antes de abrir uma contribuição, consulte esses guias para garantir consistência e qualidade no projeto 🚀.  
 
 ---
 
-## 🛠️ Tecnologias
+## Passo a passo rápido  
 
-- Node.js 
-- Next.js 
-- PostgreSQL
+1. **Fork** este repositório para a sua conta.  
+2. **Clone** o fork localmente:  
+   ```bash
+   git clone https://github.com/seu-usuario/2025.2-T01-WaveOn.git
+3. Crie uma **branch** descritiva para sua contribuição:  
+   ```bash
+   git checkout -b minha-feature
+4. Faça suas alterações seguindo as boas práticas de commits.  
+5. **Push** da sua branch para o seu fork:  
+   ```bash
+   git push origin minha-feature
+6. Abra um **Pull Request** para a branch adequada do repositório principal.
 
----
-
-## 📦 Como rodar localmente
-
-### 1. Clonar o repositório  
-```bash
-git clone https://github.com/CJR-Grupo8/web-backend.git
-cd web-backend
-```
-
-### 2. Instalar dependências 
-Instale o Node (v.20+)
-```bash
-npm install
-```
-Instale o PostgreSQL e crie o banco:
-```sql
-   CREATE DATABASE web_backend;
-```
-
-### 3. Criar .env local
-Criar um .env baseado no molde da .env.example
-> Substitua com sua senha do PostgreSQL
-
->⚠️ **Importante:** NÃO coloque informações da **.env** dentro do molde **.env.example**, pois esse sim sempre será visível no repositório!
-
-### 4. Rodar servidor
-O servidor, após comando abaixo, será inciado em **http://localhost:3001**
-```bash
-npm run start:dev
-```
+7. Aguarde a revisão e feedback do time ✨.

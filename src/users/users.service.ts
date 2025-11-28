@@ -1,169 +1,91 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import * as bcrypt from 'bcrypt';
-import { User } from '../../generated/prisma';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
-  async create(createUserDto: CreateUserDto) {
-    // Check if user already exists
-    const existingUser = await this.prisma.user.findFirst({
-      where: {
-        OR: [
-          { email: createUserDto.email },
-          { username: createUserDto.username },
-        ],
-      },
+  async createUser(dto: CreateUserDto, role: 'USER' | 'ADMIN' = 'USER') {
+    const existing = await this.prisma.user.findUnique({
+      where: { email: dto.email },
     });
 
-    if (existingUser) {
-      if (existingUser.email === createUserDto.email) {
-        throw new ConflictException('Email already exists');
-      }
-      if (existingUser.username === createUserDto.username) {
-        throw new ConflictException('Username already exists');
-      }
+    if (existing) {
+      throw new BadRequestException('E-mail já cadastrado');
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(createUserDto.password, 12);
+    const passwordHash = await bcrypt.hash(dto.password, 10);
 
-    // Create user
     const user = await this.prisma.user.create({
       data: {
-        ...createUserDto,
-        password: hashedPassword,
-      },
-      select: {
-        id: true,
-        fullName: true,
-        username: true,
-        email: true,
-        createdAt: true,
+        name: dto.name,
+        email: dto.email,
+        phone: dto.phone ?? null,
+        password: passwordHash,
+        role,
       },
     });
 
-    return user;
+    return this.toPublic(user);
   }
 
-  async findByEmail(email: string): Promise<User | null> {
-    const user = await this.prisma.user.findUnique({
-      where: { email },
-    });
-
-    return user;
+  async findByEmail(email: string) {
+    return this.prisma.user.findUnique({ where: { email } });
   }
 
-  async findAll() {
-    return this.prisma.user.findMany({
-      select: {
-        id: true,
-        fullName: true,
-        username: true,
-        email: true,
-        createdAt: true,
-      },
-    });
-  }
-
-  async findOne(id: number) {
+  async findById(id: string) {
     const user = await this.prisma.user.findUnique({
       where: { id },
-      select: {
-        id: true,
-        fullName: true,
-        username: true,
-        email: true,
-        createdAt: true,
-        lojas: {
-          select: {
-            id: true,
-            nome: true,
-            descricao: true,
-            createdAt: true,
-          },
-        },
-        comments: {
-          select: {
-            id: true,
-            title: true,
-            content: true,
-            published: true,
-            createdAt: true,
-          },
-        },
-      },
     });
 
-    if (!user) {
-      throw new NotFoundException(`User with ID ${id} not found`);
-    }
+    if (!user) throw new NotFoundException('Usuário não encontrado');
 
-    return user;
+    return this.toPublic(user);
   }
 
-  async update(id: number, updateUserDto: UpdateUserDto) {
-    // Check if user exists
-    await this.findOne(id);
-
-    if (updateUserDto.email || updateUserDto.username) {
-      const existingUser = await this.prisma.user.findFirst({
-        where: {
-          AND: [
-            { id: { not: id } },
-            {
-              OR: [
-                ...(updateUserDto.email ? [{ email: updateUserDto.email }] : []),
-                ...(updateUserDto.username ? [{ username: updateUserDto.username }] : []),
-              ],
-            },
-          ],
-        },
-      });
-
-      if (existingUser) {
-        if (existingUser.email === updateUserDto.email) {
-          throw new ConflictException('Email already exists');
-        }
-        if (existingUser.username === updateUserDto.username) {
-          throw new ConflictException('Username already exists');
-        }
-      }
-    }
-
-    
-    const data = { ...updateUserDto };
-    if (updateUserDto.password) {
-      data.password = await bcrypt.hash(updateUserDto.password, 12);
-    }
-
+  async updateProfile(userId: string, dto: UpdateProfileDto) {
     const user = await this.prisma.user.update({
-      where: { id },
-      data,
-      select: {
-        id: true,
-        fullName: true,
-        username: true,
-        email: true,
-        createdAt: true,
+      where: { id: userId },
+      data: {
+        name: dto.name,
+        phone: dto.phone,
       },
     });
 
-    return user;
+    return this.toPublic(user);
   }
 
-  async remove(id: number) {
-    // Check if user exists
-    await this.findOne(id);
+  async changePassword(userId: string, dto: ChangePasswordDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+    if (!user) throw new NotFoundException('Usuário não encontrado');
 
-    await this.prisma.user.delete({
-      where: { id },
+    const isValid = await bcrypt.compare(dto.currentPassword, user.password);
+    if (!isValid) {
+      throw new BadRequestException('Senha atual incorreta');
+    }
+
+    const newHash = await bcrypt.hash(dto.newPassword, 10);
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { password: newHash },
     });
 
-    return { message: `User with ID ${id} deleted successfully` };
+    return { message: 'Senha alterada com sucesso' };
+  }
+
+  toPublic(user: any) {
+    const { password, ...rest } = user;
+    return rest;
   }
 }

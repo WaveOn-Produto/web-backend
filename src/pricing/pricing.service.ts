@@ -1,0 +1,32 @@
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from 'src/prisma/prisma.service';
+
+@Injectable()
+export class PricingService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async getPrice(serviceType: string, category: string) {
+    // <<< AQUI o pulo do gato: findFirst com where normal
+    const pricing = await this.prisma.pricing.findFirst({
+      where: {
+        serviceType,
+        vehicleCategory: category,
+      },
+    });
+
+    if (!pricing) {
+      throw new NotFoundException(
+        `Não há preço configurado para ${serviceType} - ${category}`,
+      );
+    }
+
+    const priceFormatted = (pricing.priceCents / 100)
+      .toFixed(2)
+      .replace('.', ',');
+
+    return {
+      price: priceFormatted,
+      currency: 'BRL',
+    };
+  }
+}

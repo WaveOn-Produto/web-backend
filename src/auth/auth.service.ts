@@ -1,60 +1,47 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { UsersService } from 'src/users/users.service';
-import * as bcrypt from 'bcrypt';
-import { UserPayload } from './types/UserPayload';
+import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
-import { UserToken } from './types/UserToken';
-import { LoginRequestBodyDto } from './dto/loginRequestBody.dto';
+import { LoginDto } from './dto/login.dto';
 
 @Injectable()
 export class AuthService {
-    constructor(private readonly userService: UsersService,
-        private readonly jwtService: JwtService,
-        private readonly configService: ConfigService,
-    ) {}
-    
-    async login(loginRequestBody: LoginRequestBodyDto): Promise<UserToken> {
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly jwtService: JwtService,
+  ) {}
 
-        const user = await this.validateUser(loginRequestBody.email, loginRequestBody.password);
-        if (!user) {
-            throw new UnauthorizedException('Invalid credentials');
-        }
+  async validateUser(email: string, password: string) {
+    const user = await this.usersService.findByEmail(email);
 
-        const payload: UserPayload = { email: user.email, sub: String(user.id) };
-       
-        const jwtToken = this.jwtService.sign(payload, {
-            secret: this.configService.get('JWT_SECRET'),
-            expiresIn: '1d',
-        });
-
-        return { 
-            access_token: jwtToken,
-            user: {
-                id: user.id,
-                fullName: user.fullName,
-                username: user.username,
-                email: user.email,
-                createdAt: user.createdAt.toISOString(),
-            }
-        };
+    if (!user) {
+      throw new UnauthorizedException('Credenciais inválidas');
     }
 
-    //metodo de validação
-    async validateUser(email: string, password: string) {
-        const user = await this.userService.findByEmail(email);
+    const isValid = await bcrypt.compare(password, user.password);
 
-        if (user) {
-            const isPasswordValid = await bcrypt.compare(password, user.password);
-
-            if (isPasswordValid) {
-                return {
-                    ...user,
-                    password: undefined,
-                };
-            } 
-        } 
-
-        return null;
+    if (!isValid) {
+      throw new UnauthorizedException('Credenciais inválidas');
     }
+
+    return user;
+  }
+
+  async login(dto: LoginDto) {
+    const user = await this.validateUser(dto.email, dto.password);
+
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+    };
+
+    return {
+      accessToken: await this.jwtService.signAsync(payload),
+      user: this.usersService.toPublic(user),
+    };
+  }
 }

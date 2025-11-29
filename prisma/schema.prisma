@@ -55,12 +55,13 @@ model Address {
 }
 
 model Appointment {
-  id          String            @id @default(uuid())
-  serviceType String
-  date        DateTime
-  time        String
-  priceCents  Int
-  status      AppointmentStatus @default(SCHEDULED)
+  id           String            @id @default(uuid())
+  serviceType  String
+  date         DateTime
+  time         String
+  priceCents   Int
+  status       AppointmentStatus @default(SCHEDULED)
+  observations String?
 
   userId    String
   carId     String

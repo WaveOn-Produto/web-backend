@@ -1,10 +1,9 @@
 import { PrismaClient } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
-async function main() {
-  console.log('🌱 Iniciando seed do banco de dados...');
-
+async function seedPricing() {
   // Limpa a tabela Pricing antes de popular
   await prisma.pricing.deleteMany({});
   console.log('✅ Tabela Pricing limpa');
@@ -24,6 +23,34 @@ async function main() {
   });
 
   console.log(`✅ ${pricings.count} preços cadastrados`);
+}
+
+async function createAdminUser() {
+  const hashedPassword = await bcrypt.hash('Admin123', 10);
+
+  const admin = await prisma.user.upsert({
+    where: { email: 'admin@waveon.com' },
+    update: {},
+    create: {
+      name: 'Administrador',
+      email: 'admin@waveon.com',
+      password: hashedPassword,
+      phone: '(11) 99999-9999',
+      role: 'ADMIN',
+    },
+  });
+
+  console.log('✅ Usuário admin criado!');
+  console.log('📧 Email:', admin.email);
+  console.log('🔑 Senha: Admin123');
+}
+
+async function main() {
+  console.log('🌱 Iniciando seed do banco de dados...');
+  
+  await seedPricing();
+  await createAdminUser();
+  
   console.log('🎉 Seed concluído com sucesso!');
 }
 

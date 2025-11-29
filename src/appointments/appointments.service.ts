@@ -185,4 +185,52 @@ export class AppointmentsService {
       addressId: ap.addressId
     };
   }
+
+  // ========== MÉTODOS ADMIN ==========
+
+  async getAllForAdmin() {
+    return this.prisma.appointment.findMany({
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+          },
+        },
+        car: true,
+        address: true,
+      },
+      orderBy: {
+        date: 'desc',
+      },
+    });
+  }
+
+  async updateObservations(id: string, observations: string) {
+    return this.prisma.appointment.update({
+      where: { id },
+      data: { observations },
+    });
+  }
+
+  async complete(id: string) {
+    const appointment = await this.prisma.appointment.findUnique({
+      where: { id },
+    });
+
+    if (!appointment) {
+      throw new NotFoundException('Agendamento não encontrado');
+    }
+
+    if (appointment.status !== 'SCHEDULED') {
+      throw new BadRequestException('Apenas agendamentos pendentes podem ser concluídos');
+    }
+
+    return this.prisma.appointment.update({
+      where: { id },
+      data: { status: 'COMPLETED' },
+    });
+  }
 }

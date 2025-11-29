@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { AppointmentsService } from './appointments.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { AdminGuard } from 'src/auth/admin.guard';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { RescheduleAppointmentDto } from './dto/reschedule-appointment.dto';
 
@@ -52,5 +53,28 @@ export class AppointmentsController {
   @Get(':id/repeat')
   repeat(@Req() req: any, @Param('id') id: string) {
     return this.apService.repeat(req.user.sub, id);
+  }
+
+  // ========== ROTAS ADMIN ==========
+
+  @Get('admin/all')
+  @UseGuards(AdminGuard)
+  async getAllForAdmin() {
+    return this.apService.getAllForAdmin();
+  }
+
+  @Patch(':id/observations')
+  @UseGuards(AdminGuard)
+  async updateObservations(
+    @Param('id') id: string,
+    @Body() body: { observations: string }
+  ) {
+    return this.apService.updateObservations(id, body.observations);
+  }
+
+  @Patch(':id/complete')
+  @UseGuards(AdminGuard)
+  async completeAppointment(@Param('id') id: string) {
+    return this.apService.complete(id);
   }
 }

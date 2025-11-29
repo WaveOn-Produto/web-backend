@@ -190,17 +190,37 @@ export class AppointmentsService {
 
   async getAllForAdmin() {
     return this.prisma.appointment.findMany({
-      include: {
+      select: {
+        id: true,
+        date: true,
+        time: true,
+        priceCents: true,
+        serviceType: true,
+        observations: true,
+        status: true,
         user: {
           select: {
             id: true,
             name: true,
             email: true,
             phone: true,
-          },
+          }
         },
-        car: true,
-        address: true,
+        car: {
+          select: {
+            id: true,
+            plate: true,      
+            category: true,
+          }
+        },
+        address: {
+          select: {
+            id: true,
+            cep: true,        
+            street: true,
+            number: true,
+          }
+        }
       },
       orderBy: {
         date: 'desc',

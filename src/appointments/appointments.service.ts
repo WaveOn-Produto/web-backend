@@ -6,7 +6,7 @@ import {
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { RescheduleAppointmentDto } from './dto/reschedule-appointment.dto';
-import { addDays, isBefore, isSameDay, differenceInMinutes } from 'date-fns';
+import { addDays, isBefore, isAfter, isSameDay, differenceInMinutes } from 'date-fns';
 import { parseISO } from 'date-fns/parseISO';
 
 @Injectable()
@@ -28,6 +28,7 @@ export class AppointmentsService {
   private validateDate(dateString: string) {
     const date = parseISO(dateString);
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
     const minDate = addDays(today, 1);
     const maxDate = addDays(today, 7);
@@ -36,7 +37,7 @@ export class AppointmentsService {
       throw new BadRequestException('Não é permitido agendar no dia de hoje.');
     }
 
-    if (isBefore(date, minDate) || isBefore(maxDate, date)) {
+    if (isBefore(date, minDate) || isAfter(date, maxDate)) {
       throw new BadRequestException('A data deve estar entre 1 e 7 dias.');
     }
   }
@@ -72,7 +73,7 @@ export class AppointmentsService {
 
     // Verificar conflito com outros horários
     const existing = await this.prisma.appointment.findMany({
-      where: { date },
+      where: { date: parseISO(date) },
     });
 
     for (const ap of existing) {
@@ -92,6 +93,25 @@ export class AppointmentsService {
         addressId,
       },
     });
+  }
+
+  async getAvailableSlots(dateString: string) {
+    const date = parseISO(dateString);
+    
+    // Busca todos os agendamentos do dia
+    const appointments = await this.prisma.appointment.findMany({
+      where: { 
+        date,
+        status: 'SCHEDULED' // Apenas agendamentos ativos
+      },
+      select: {
+        time: true
+      }
+    });
+
+    const bookedSlots = appointments.map(ap => ap.time);
+
+    return { bookedSlots };
   }
 
   async getMyAppointments(userId: string) {

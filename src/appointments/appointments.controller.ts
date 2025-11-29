@@ -7,6 +7,7 @@ import {
   Delete,
   Req,
   Param,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { AppointmentsService } from './appointments.service';
@@ -29,7 +30,12 @@ export class AppointmentsController {
     return this.apService.getMyAppointments(req.user.sub);
   }
 
-  @Delete(':id')
+  @Get('available-slots')
+  getAvailableSlots(@Query('date') date: string) {
+    return this.apService.getAvailableSlots(date);
+  }
+
+  @Patch(':id/cancel')
   cancel(@Req() req: any, @Param('id') id: string) {
     return this.apService.cancel(req.user.sub, id);
   }
@@ -43,7 +49,7 @@ export class AppointmentsController {
     return this.apService.reschedule(req.user.sub, id, dto);
   }
 
-  @Post(':id/repeat')
+  @Get(':id/repeat')
   repeat(@Req() req: any, @Param('id') id: string) {
     return this.apService.repeat(req.user.sub, id);
   }

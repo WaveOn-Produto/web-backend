@@ -17,16 +17,17 @@ import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { RescheduleAppointmentDto } from './dto/reschedule-appointment.dto';
 
 @Controller('api/appointments')
-
 export class AppointmentsController {
   constructor(private readonly apService: AppointmentsService) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   create(@Req() req: any, @Body() dto: CreateAppointmentDto) {
     return this.apService.create(req.user.sub, dto);
   }
 
   @Get('my')
+  @UseGuards(JwtAuthGuard)
   getMine(@Req() req: any) {
     return this.apService.getMyAppointments(req.user.sub);
   }
@@ -37,11 +38,13 @@ export class AppointmentsController {
   }
 
   @Patch(':id/cancel')
+  @UseGuards(JwtAuthGuard)
   cancel(@Req() req: any, @Param('id') id: string) {
     return this.apService.cancel(req.user.sub, id);
   }
 
   @Patch(':id/reschedule')
+  @UseGuards(JwtAuthGuard)
   reschedule(
     @Req() req: any,
     @Param('id') id: string,
@@ -51,6 +54,7 @@ export class AppointmentsController {
   }
 
   @Get(':id/repeat')
+  @UseGuards(JwtAuthGuard)
   repeat(@Req() req: any, @Param('id') id: string) {
     return this.apService.repeat(req.user.sub, id);
   }
@@ -67,7 +71,7 @@ export class AppointmentsController {
   @UseGuards(AdminGuard)
   async updateObservations(
     @Param('id') id: string,
-    @Body() body: { observations: string }
+    @Body() body: { observations: string },
   ) {
     return this.apService.updateObservations(id, body.observations);
   }

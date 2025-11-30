@@ -6,7 +6,7 @@ import {
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { RescheduleAppointmentDto } from './dto/reschedule-appointment.dto';
-import { addDays, isBefore, isAfter, isSameDay, differenceInMinutes } from 'date-fns';
+import { addDays, isBefore, isAfter, isSameDay } from 'date-fns';
 import { parseISO } from 'date-fns/parseISO';
 
 @Injectable()
@@ -14,38 +14,55 @@ export class AppointmentsService {
   constructor(private readonly prisma: PrismaService) {}
 
   private readonly timeSlots = [
-    '08:00', '09:00', '10:00', '11:00', '12:00',
-    '13:00', '14:00', '15:00', '16:00', '17:00'
+    '08:00',
+    '09:00',
+    '10:00',
+    '11:00',
+    '12:00',
+    '13:00',
+    '14:00',
+    '15:00',
+    '16:00',
+    '17:00',
   ];
 
   private diffMinutes(a: string, b: string) {
     const [h1, m1] = a.split(':').map(Number);
     const [h2, m2] = b.split(':').map(Number);
 
-    return Math.abs((h1 * 60 + m1) - (h2 * 60 + m2));
+    return Math.abs(h1 * 60 + m1 - (h2 * 60 + m2));
   }
 
-  private validateDate(dateString: string) {
+  private validateDate(dateString: string, time?: string) {
     const date = parseISO(dateString);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const minDate = addDays(today, 1);
+    const minDate = today; // Permite hoje
     const maxDate = addDays(today, 7);
 
-    if (isSameDay(date, today)) {
-      throw new BadRequestException('Não é permitido agendar no dia de hoje.');
+    if (isBefore(date, minDate) || isAfter(date, maxDate)) {
+      throw new BadRequestException('A data deve estar entre hoje e 7 dias.');
     }
 
-    if (isBefore(date, minDate) || isAfter(date, maxDate)) {
-      throw new BadRequestException('A data deve estar entre 1 e 7 dias.');
+    // Se for hoje, só permite horários futuros
+    if (isSameDay(date, today) && time) {
+      const [h, m] = time.split(':').map(Number);
+      const now = new Date();
+      const agendamento = new Date(date);
+      agendamento.setHours(h, m, 0, 0);
+      if (agendamento < now) {
+        throw new BadRequestException(
+          'Não é permitido agendar para um horário que já passou.',
+        );
+      }
     }
   }
 
   async create(userId: string, dto: CreateAppointmentDto) {
     const { serviceType, date, time, carId, addressId, vehicleCategory } = dto;
 
-    this.validateDate(date);
+    this.validateDate(date, time);
 
     // Verifica se carro pertence ao usuário
     const car = await this.prisma.car.findUnique({ where: { id: carId } });
@@ -54,7 +71,9 @@ export class AppointmentsService {
     }
 
     // Verifica se endereço pertence ao usuário
-    const address = await this.prisma.address.findUnique({ where: { id: addressId } });
+    const address = await this.prisma.address.findUnique({
+      where: { id: addressId },
+    });
     if (!address || address.userId !== userId) {
       throw new BadRequestException('Endereço inválido.');
     }
@@ -64,11 +83,13 @@ export class AppointmentsService {
       where: {
         serviceType,
         vehicleCategory,
-      }
+      },
     });
 
     if (!pricing) {
-      throw new BadRequestException('Preço não encontrado para essa categoria.');
+      throw new BadRequestException(
+        'Preço não encontrado para essa categoria.',
+      );
     }
 
     // Verificar conflito com outros horários
@@ -78,7 +99,9 @@ export class AppointmentsService {
 
     for (const ap of existing) {
       if (this.diffMinutes(ap.time, time) < 240) {
-        throw new BadRequestException('Horário conflita com outro agendamento.');
+        throw new BadRequestException(
+          'Horário conflita com outro agendamento.',
+        );
       }
     }
 
@@ -97,19 +120,19 @@ export class AppointmentsService {
 
   async getAvailableSlots(dateString: string) {
     const date = parseISO(dateString);
-    
+
     // Busca todos os agendamentos do dia
     const appointments = await this.prisma.appointment.findMany({
-      where: { 
+      where: {
         date,
-        status: 'SCHEDULED' // Apenas agendamentos ativos
+        status: 'SCHEDULED', // Apenas agendamentos ativos
       },
       select: {
-        time: true
-      }
+        time: true,
+      },
     });
 
-    const bookedSlots = appointments.map(ap => ap.time);
+    const bookedSlots = appointments.map((ap) => ap.time);
 
     return { bookedSlots };
   }
@@ -121,7 +144,7 @@ export class AppointmentsService {
         car: true,
         address: true,
       },
-      orderBy: { date: 'asc' }
+      orderBy: { date: 'asc' },
     });
   }
 
@@ -147,7 +170,7 @@ export class AppointmentsService {
       throw new NotFoundException('Agendamento não encontrado.');
     }
 
-    this.validateDate(dto.date);
+    this.validateDate(dto.date, dto.time);
 
     // verificar conflitos novamente
     const sameDay = await this.prisma.appointment.findMany({
@@ -166,7 +189,7 @@ export class AppointmentsService {
         date: parseISO(dto.date),
         time: dto.time,
         status: 'SCHEDULED',
-      }
+      },
     });
   }
 
@@ -180,9 +203,11 @@ export class AppointmentsService {
     // copia o agendamento com a data nova
     return {
       serviceType: ap.serviceType,
-      vehicleCategory: (await this.prisma.car.findUnique({ where: { id: ap.carId } }))!.category,
+      vehicleCategory: (await this.prisma.car.findUnique({
+        where: { id: ap.carId },
+      }))!.category,
       carId: ap.carId,
-      addressId: ap.addressId
+      addressId: ap.addressId,
     };
   }
 
@@ -204,23 +229,23 @@ export class AppointmentsService {
             name: true,
             email: true,
             phone: true,
-          }
+          },
         },
         car: {
           select: {
             id: true,
-            plate: true,      
+            plate: true,
             category: true,
-          }
+          },
         },
         address: {
           select: {
             id: true,
-            cep: true,        
+            cep: true,
             street: true,
             number: true,
-          }
-        }
+          },
+        },
       },
       orderBy: {
         date: 'desc',
@@ -245,7 +270,9 @@ export class AppointmentsService {
     }
 
     if (appointment.status !== 'SCHEDULED') {
-      throw new BadRequestException('Apenas agendamentos pendentes podem ser concluídos');
+      throw new BadRequestException(
+        'Apenas agendamentos pendentes podem ser concluídos',
+      );
     }
 
     return this.prisma.appointment.update({

@@ -122,6 +122,7 @@ export class AppointmentsService {
   async getAvailableSlots(dateString: string) {
     const date = parseISO(dateString);
 
+    // Busca os horários já marcados para a data especificada
     const appointments = await this.prisma.appointment.findMany({
       where: {
         date,
@@ -132,9 +133,15 @@ export class AppointmentsService {
       },
     });
 
+    // Extrai os horários marcados
     const bookedSlots = appointments.map((ap) => ap.time);
 
-    return { bookedSlots };
+    // Filtra os horários disponíveis com base nos timeSlots definidos
+    const availableSlots = this.timeSlots.filter(
+      (slot) => !bookedSlots.includes(slot),
+    );
+
+    return { availableSlots };
   }
 
   async getMyAppointments(userId: string) {
@@ -234,8 +241,8 @@ export class AppointmentsService {
             id: true,
             plate: true,
             category: true,
-            brand: true, 
-            model: true, 
+            brand: true,
+            model: true,
           },
         },
         address: {

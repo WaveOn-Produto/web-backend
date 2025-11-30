@@ -17,7 +17,7 @@ import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { RescheduleAppointmentDto } from './dto/reschedule-appointment.dto';
 
 @Controller('api/appointments')
-@UseGuards(JwtAuthGuard)
+
 export class AppointmentsController {
   constructor(private readonly apService: AppointmentsService) {}
 

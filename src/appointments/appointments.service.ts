@@ -38,7 +38,7 @@ export class AppointmentsService {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const minDate = today; // Permite hoje
+    const minDate = today;
     const maxDate = addDays(today, 7);
 
     if (isBefore(date, minDate) || isAfter(date, maxDate)) {
@@ -64,13 +64,11 @@ export class AppointmentsService {
 
     this.validateDate(date, time);
 
-    // Verifica se carro pertence ao usuário
     const car = await this.prisma.car.findUnique({ where: { id: carId } });
     if (!car || car.userId !== userId) {
       throw new BadRequestException('Carro inválido.');
     }
 
-    // Verifica se endereço pertence ao usuário
     const address = await this.prisma.address.findUnique({
       where: { id: addressId },
     });
@@ -78,7 +76,6 @@ export class AppointmentsService {
       throw new BadRequestException('Endereço inválido.');
     }
 
-    // Verifica preço
     const pricing = await this.prisma.pricing.findFirst({
       where: {
         serviceType,
@@ -92,7 +89,6 @@ export class AppointmentsService {
       );
     }
 
-    // Verificar conflito apenas com agendamentos ativos (SCHEDULED ou COMPLETED)
     const existing = await this.prisma.appointment.findMany({
       where: {
         date: parseISO(date),
@@ -126,11 +122,10 @@ export class AppointmentsService {
   async getAvailableSlots(dateString: string) {
     const date = parseISO(dateString);
 
-    // Busca todos os agendamentos do dia
     const appointments = await this.prisma.appointment.findMany({
       where: {
         date,
-        status: 'SCHEDULED', // Apenas agendamentos ativos
+        status: 'SCHEDULED',
       },
       select: {
         time: true,
@@ -177,7 +172,6 @@ export class AppointmentsService {
 
     this.validateDate(dto.date, dto.time);
 
-    // verificar conflitos novamente
     const sameDay = await this.prisma.appointment.findMany({
       where: { date: parseISO(dto.date) },
     });
@@ -205,7 +199,6 @@ export class AppointmentsService {
       throw new NotFoundException('Agendamento não encontrado.');
     }
 
-    // copia o agendamento com a data nova
     return {
       serviceType: ap.serviceType,
       vehicleCategory: (await this.prisma.car.findUnique({
@@ -241,6 +234,8 @@ export class AppointmentsService {
             id: true,
             plate: true,
             category: true,
+            brand: true, 
+            model: true, 
           },
         },
         address: {

@@ -85,7 +85,7 @@ export class UsersService {
   }
 
   toPublic(user: any) {
-    const { password, ...rest } = user;
-    return rest;
+    const { password, role, ...rest } = user;
+    return { ...rest, role };
   }
 }

@@ -62,7 +62,7 @@ export class AppointmentsController {
   // ========== ROTAS ADMIN ==========
 
   @Get('admin/all')
-  @UseGuards(AdminGuard)
+  @UseGuards(JwtAuthGuard, AdminGuard)
   async getAllForAdmin() {
     return this.apService.getAllForAdmin();
   }
@@ -77,7 +77,8 @@ export class AppointmentsController {
   }
 
   @Patch(':id/complete')
-  @UseGuards(AdminGuard)
+  @Patch(':id/complete')
+  @UseGuards(JwtAuthGuard, AdminGuard)
   async completeAppointment(@Param('id') id: string) {
     return this.apService.complete(id);
   }

@@ -11,14 +11,46 @@ async function seedPricing() {
   // Popula a tabela Pricing
   const pricings = await prisma.pricing.createMany({
     data: [
-      { serviceType: 'Lavagem simples', vehicleCategory: 'Hatch', priceCents: 8000 },
-      { serviceType: 'Lavagem simples', vehicleCategory: 'Sedan', priceCents: 9000 },
-      { serviceType: 'Lavagem simples', vehicleCategory: 'SUV', priceCents: 9500 },
-      { serviceType: 'Lavagem simples', vehicleCategory: 'Caminhonete', priceCents: 12000 },
-      { serviceType: 'Lavagem completa', vehicleCategory: 'Hatch', priceCents: 10000 },
-      { serviceType: 'Lavagem completa', vehicleCategory: 'Sedan', priceCents: 11000 },
-      { serviceType: 'Lavagem completa', vehicleCategory: 'SUV', priceCents: 11500 },
-      { serviceType: 'Lavagem completa', vehicleCategory: 'Caminhonete', priceCents: 15000 },
+      {
+        serviceType: 'Lavagem simples',
+        vehicleCategory: 'Hatch',
+        priceCents: 8000,
+      },
+      {
+        serviceType: 'Lavagem simples',
+        vehicleCategory: 'Sedan',
+        priceCents: 9000,
+      },
+      {
+        serviceType: 'Lavagem simples',
+        vehicleCategory: 'SUV',
+        priceCents: 9500,
+      },
+      {
+        serviceType: 'Lavagem simples',
+        vehicleCategory: 'Caminhonete',
+        priceCents: 12000,
+      },
+      {
+        serviceType: 'Lavagem completa',
+        vehicleCategory: 'Hatch',
+        priceCents: 10000,
+      },
+      {
+        serviceType: 'Lavagem completa',
+        vehicleCategory: 'Sedan',
+        priceCents: 11000,
+      },
+      {
+        serviceType: 'Lavagem completa',
+        vehicleCategory: 'SUV',
+        priceCents: 11500,
+      },
+      {
+        serviceType: 'Lavagem completa',
+        vehicleCategory: 'Caminhonete',
+        priceCents: 15000,
+      },
     ],
   });
 
@@ -47,10 +79,17 @@ async function createAdminUser() {
 
 async function main() {
   console.log('🌱 Iniciando seed do banco de dados...');
-  
+
   await seedPricing();
+
+  await prisma.user.update({
+    where: { email: 'admin@waveon.com' },
+    data: { role: 'ADMIN' },
+  });
+  console.log('Usuário admin@waveon.com atualizado para ADMIN');
+
   await createAdminUser();
-  
+
   console.log('🎉 Seed concluído com sucesso!');
 }
 

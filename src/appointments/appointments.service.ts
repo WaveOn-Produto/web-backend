@@ -92,9 +92,14 @@ export class AppointmentsService {
       );
     }
 
-    // Verificar conflito com outros horários
+    // Verificar conflito apenas com agendamentos ativos (SCHEDULED ou COMPLETED)
     const existing = await this.prisma.appointment.findMany({
-      where: { date: parseISO(date) },
+      where: {
+        date: parseISO(date),
+        status: {
+          in: ['SCHEDULED', 'COMPLETED'],
+        },
+      },
     });
 
     for (const ap of existing) {

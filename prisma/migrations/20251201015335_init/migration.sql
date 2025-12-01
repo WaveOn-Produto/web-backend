@@ -4,6 +4,12 @@ CREATE TYPE "AppointmentStatus" AS ENUM ('SCHEDULED', 'COMPLETED', 'CANCELLED');
 -- CreateEnum
 CREATE TYPE "Role" AS ENUM ('USER', 'ADMIN');
 
+-- CreateEnum
+CREATE TYPE "PaymentStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED', 'CANCELLED');
+
+-- CreateEnum
+CREATE TYPE "PaymentType" AS ENUM ('PIX', 'CARD');
+
 -- CreateTable
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
@@ -53,6 +59,7 @@ CREATE TABLE "Appointment" (
     "time" TEXT NOT NULL,
     "priceCents" INTEGER NOT NULL,
     "status" "AppointmentStatus" NOT NULL DEFAULT 'SCHEDULED',
+    "observations" TEXT,
     "userId" TEXT NOT NULL,
     "carId" TEXT NOT NULL,
     "addressId" TEXT NOT NULL,
@@ -79,11 +86,34 @@ CREATE TABLE "BusinessRule" (
     CONSTRAINT "BusinessRule_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "Payment" (
+    "id" TEXT NOT NULL,
+    "status" "PaymentStatus" NOT NULL DEFAULT 'PENDING',
+    "type" "PaymentType" NOT NULL,
+    "mercadoPagoId" TEXT,
+    "qrCode" TEXT,
+    "qrCodeBase64" TEXT,
+    "initPoint" TEXT,
+    "valueCents" INTEGER NOT NULL,
+    "appointmentId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Payment_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Car_plate_key" ON "Car"("plate");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Pricing_serviceType_vehicleCategory_key" ON "Pricing"("serviceType", "vehicleCategory");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Payment_appointmentId_key" ON "Payment"("appointmentId");
 
 -- AddForeignKey
 ALTER TABLE "Car" ADD CONSTRAINT "Car_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -99,3 +129,9 @@ ALTER TABLE "Appointment" ADD CONSTRAINT "Appointment_carId_fkey" FOREIGN KEY ("
 
 -- AddForeignKey
 ALTER TABLE "Appointment" ADD CONSTRAINT "Appointment_addressId_fkey" FOREIGN KEY ("addressId") REFERENCES "Address"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Payment" ADD CONSTRAINT "Payment_appointmentId_fkey" FOREIGN KEY ("appointmentId") REFERENCES "Appointment"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Payment" ADD CONSTRAINT "Payment_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

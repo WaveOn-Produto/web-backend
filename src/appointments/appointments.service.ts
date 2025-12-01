@@ -45,7 +45,7 @@ export class AppointmentsService {
       throw new BadRequestException('A data deve estar entre hoje e 7 dias.');
     }
 
-    // Se for hoje, só permite horários futuros
+    
     if (isSameDay(date, today) && time) {
       const [h, m] = time.split(':').map(Number);
       const now = new Date();
@@ -92,9 +92,7 @@ export class AppointmentsService {
     const existing = await this.prisma.appointment.findMany({
       where: {
         date: parseISO(date),
-        status: {
-          in: ['SCHEDULED', 'COMPLETED'],
-        },
+        status: 'SCHEDULED', 
       },
     });
 
@@ -122,7 +120,6 @@ export class AppointmentsService {
   async getAvailableSlots(dateString: string) {
     const date = parseISO(dateString);
 
-    // Busca os horários já marcados para a data especificada
     const appointments = await this.prisma.appointment.findMany({
       where: {
         date,
@@ -133,15 +130,9 @@ export class AppointmentsService {
       },
     });
 
-    // Extrai os horários marcados
     const bookedSlots = appointments.map((ap) => ap.time);
 
-    // Filtra os horários disponíveis com base nos timeSlots definidos
-    const availableSlots = this.timeSlots.filter(
-      (slot) => !bookedSlots.includes(slot),
-    );
-
-    return { availableSlots };
+    return { bookedSlots };
   }
 
   async getMyAppointments(userId: string) {

@@ -29,4 +29,23 @@ export class PricingService {
       currency: 'BRL',
     };
   }
+
+  async getAll() {
+    return this.prisma.pricing.findMany({
+      orderBy: [{ serviceType: 'asc' }, { vehicleCategory: 'asc' }],
+    });
+  }
+
+  async update(id: number, priceCents: number) {
+    const pricing = await this.prisma.pricing.findUnique({ where: { id } });
+
+    if (!pricing) {
+      throw new NotFoundException('Preço não encontrado');
+    }
+
+    return this.prisma.pricing.update({
+      where: { id },
+      data: { priceCents },
+    });
+  }
 }

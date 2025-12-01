@@ -21,6 +21,3 @@ import { PaymentsModule } from './payments/payments.module';
   ],
 })
 export class AppModule {}
-
-
-

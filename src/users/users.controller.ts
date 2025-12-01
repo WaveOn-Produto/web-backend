@@ -1,53 +1,64 @@
 import {
+  Body,
   Controller,
   Get,
-  Post,
-  Body,
   Patch,
+  Post,
   Param,
-  Delete,
-  ParseIntPipe,
-  HttpCode,
-  HttpStatus,
+  UseGuards,
+  Req,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { AdminGuard } from 'src/auth/admin.guard';
 
-import { Public } from '../auth/decorators/isPublic.decorator';
-
-@Controller('users')
+@Controller('api')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Public()
-  @Post()
-  @HttpCode(HttpStatus.CREATED)
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
+  @Post('users/register')
+  async registerUser(@Body() dto: CreateUserDto) {
+    return this.usersService.createUser(dto, 'USER');
   }
 
-  @Get()
-  findAll() {
-    return this.usersService.findAll();
+  // Em produção: proteger com guard de ADMIN
+  @Post('admin/register')
+  async registerAdmin(@Body() dto: CreateUserDto) {
+    return this.usersService.createUser(dto, 'ADMIN');
   }
 
-  @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.usersService.findOne(id);
+  @UseGuards(JwtAuthGuard)
+  @Get('users/me')
+  async getProfile(@Req() req: any) {
+    return this.usersService.findById(req.user.sub);
   }
 
-  @Patch(':id')
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateUserDto: UpdateUserDto,
-  ) {
-    return this.usersService.update(id, updateUserDto);
+  @UseGuards(JwtAuthGuard)
+  @Patch('users/me')
+  async updateProfile(@Req() req: any, @Body() dto: UpdateProfileDto) {
+    return this.usersService.updateProfile(req.user.sub, dto);
   }
 
-  @Delete(':id')
-  @HttpCode(HttpStatus.OK)
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.usersService.remove(id);
+  @UseGuards(JwtAuthGuard)
+  @Patch('users/me/password')
+  async changePassword(@Req() req: any, @Body() dto: ChangePasswordDto) {
+    return this.usersService.changePassword(req.user.sub, dto);
+  }
+
+  // ========== ROTAS ADMIN ==========
+
+  @Get('users/admin/all')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  async getAllUsers() {
+    return this.usersService.getAllUsers();
+  }
+
+  @Get('users/admin/:id')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  async getUserById(@Param('id') id: string) {
+    return this.usersService.getUserByIdWithRelations(id);
   }
 }

@@ -4,6 +4,7 @@ import {
   Get,
   Patch,
   Post,
+  Param,
   UseGuards,
   Req,
 } from '@nestjs/common';
@@ -12,6 +13,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { AdminGuard } from 'src/auth/admin.guard';
 
 @Controller('api')
 export class UsersController {
@@ -44,5 +46,19 @@ export class UsersController {
   @Patch('users/me/password')
   async changePassword(@Req() req: any, @Body() dto: ChangePasswordDto) {
     return this.usersService.changePassword(req.user.sub, dto);
+  }
+
+  // ========== ROTAS ADMIN ==========
+
+  @Get('users/admin/all')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  async getAllUsers() {
+    return this.usersService.getAllUsers();
+  }
+
+  @Get('users/admin/:id')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  async getUserById(@Param('id') id: string) {
+    return this.usersService.getUserByIdWithRelations(id);
   }
 }

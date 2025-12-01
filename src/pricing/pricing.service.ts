@@ -6,7 +6,7 @@ export class PricingService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getPrice(serviceType: string, category: string) {
-    // <<< AQUI o pulo do gato: findFirst com where normal
+
     const pricing = await this.prisma.pricing.findFirst({
       where: {
         serviceType,

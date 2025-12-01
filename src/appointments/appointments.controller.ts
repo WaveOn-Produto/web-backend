@@ -68,7 +68,7 @@ export class AppointmentsController {
   }
 
   @Patch(':id/observations')
-  @UseGuards(AdminGuard)
+  @UseGuards(JwtAuthGuard, AdminGuard) // ← Adicionar JwtAuthGuard antes do AdminGuard
   async updateObservations(
     @Param('id') id: string,
     @Body() body: { observations: string },

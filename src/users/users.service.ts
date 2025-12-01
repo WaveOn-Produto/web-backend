@@ -88,4 +88,67 @@ export class UsersService {
     const { password, role, ...rest } = user;
     return { ...rest, role };
   }
+
+  // ========== MÉTODOS ADMIN ==========
+
+  async getAllUsers() {
+    return this.prisma.user.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        createdAt: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
+
+  async getUserByIdWithRelations(id: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      include: {
+        cars: {
+          select: {
+            id: true,
+            brand: true,
+            model: true,
+            plate: true,
+          },
+        },
+        addresses: {
+          select: {
+            id: true,
+            street: true,
+            number: true,
+            complement: true,
+            district: true,
+            city: true,
+            cep: true,
+          },
+        },
+        appointments: {
+          select: {
+            id: true,
+            date: true,
+            time: true,
+            status: true,
+            serviceType: true,
+            priceCents: true,
+          },
+          orderBy: {
+            date: 'desc',
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Usuário não encontrado');
+    }
+
+    return this.toPublic(user);
+  }
 }

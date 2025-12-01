@@ -45,7 +45,6 @@ export class AppointmentsService {
       throw new BadRequestException('A data deve estar entre hoje e 7 dias.');
     }
 
-    
     if (isSameDay(date, today) && time) {
       const [h, m] = time.split(':').map(Number);
       const now = new Date();
@@ -92,7 +91,7 @@ export class AppointmentsService {
     const existing = await this.prisma.appointment.findMany({
       where: {
         date: parseISO(date),
-        status: 'SCHEDULED', 
+        status: 'SCHEDULED',
       },
     });
 
@@ -141,6 +140,7 @@ export class AppointmentsService {
       include: {
         car: true,
         address: true,
+        payment: true,
       },
       orderBy: { date: 'asc' },
     });
@@ -244,6 +244,7 @@ export class AppointmentsService {
             number: true,
           },
         },
+        payment: true,
       },
       orderBy: {
         date: 'desc',

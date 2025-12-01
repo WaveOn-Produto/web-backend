@@ -1,7 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { mp } from 'src/mercadopago.config';
-import { Payment as MpPayment } from "mercadopago";
+import { Payment as MpPayment } from 'mercadopago';
 
 @Injectable()
 export class PaymentsService {
@@ -13,6 +13,9 @@ export class PaymentsService {
   async createPixPayment(dto: { appointmentId: string; userId: string }) {
     const appointment = await this.prisma.appointment.findUnique({
       where: { id: dto.appointmentId },
+      include: {
+        user: true, // Incluir dados do usuário para pegar o email
+      },
     });
 
     if (!appointment) {
@@ -23,8 +26,8 @@ export class PaymentsService {
       body: {
         transaction_amount: appointment.priceCents / 100,
         description: `Pagamento do serviço ${appointment.serviceType}`,
-        payment_method_id: "pix",
-        payer: { email: "cliente@example.com" },
+        payment_method_id: 'pix',
+        payer: { email: appointment.user.email }, // Usar email real do usuário
       },
     });
 
@@ -32,11 +35,12 @@ export class PaymentsService {
 
     const payment = await this.prisma.payment.create({
       data: {
-        type: "PIX",
-        status: "PENDING",
+        type: 'PIX',
+        status: 'PENDING',
         mercadoPagoId: trx.id ? trx.id.toString() : null,
         qrCode: trx.point_of_interaction?.transaction_data?.qr_code || null,
-        qrCodeBase64: trx.point_of_interaction?.transaction_data?.qr_code_base64 || null,
+        qrCodeBase64:
+          trx.point_of_interaction?.transaction_data?.qr_code_base64 || null,
         valueCents: appointment.priceCents,
         appointmentId: appointment.id,
         userId: dto.userId,
@@ -50,59 +54,58 @@ export class PaymentsService {
     };
   }
 
-// -------------------------------------------------------
-// CRIAR PAGAMENTO CARTÃO (MODO MOCKADO PARA TESTES)
-// -------------------------------------------------------
-async createCardPayment(dto: {
-  appointmentId: string;
-  userId: string;
-  token: string;
-  installment: number;
-}) {
-  const appointment = await this.prisma.appointment.findUnique({
-    where: { id: dto.appointmentId },
-  });
+  // -------------------------------------------------------
+  // CRIAR PAGAMENTO CARTÃO (MODO MOCKADO PARA TESTES)
+  // -------------------------------------------------------
+  async createCardPayment(dto: {
+    appointmentId: string;
+    userId: string;
+    token: string;
+    installment: number;
+  }) {
+    const appointment = await this.prisma.appointment.findUnique({
+      where: { id: dto.appointmentId },
+    });
 
-  if (!appointment) {
-    throw new BadRequestException('Agendamento não encontrado');
-  }
+    if (!appointment) {
+      throw new BadRequestException('Agendamento não encontrado');
+    }
 
-  // ============================================
-  // 🟦 MODO MOCKADO — simular pagamento aprovado
-  // ============================================
-  const mpResponse = {
-    id: 'MOCK_PAYMENT_ID_' + Math.random().toString(36).substring(2),
-    status: 'approved',
-  };
+    // ============================================
+    // 🟦 MODO MOCKADO — simular pagamento aprovado
+    // ============================================
+    const mpResponse = {
+      id: 'MOCK_PAYMENT_ID_' + Math.random().toString(36).substring(2),
+      status: 'approved',
+    };
 
-  const status = 'APPROVED';
+    const status = 'APPROVED';
 
-  // Salvar pagamento no Prisma
-  await this.prisma.payment.create({
-    data: {
-      type: 'CARD',
+    // Salvar pagamento no Prisma
+    await this.prisma.payment.create({
+      data: {
+        type: 'CARD',
+        status,
+        mercadoPagoId: mpResponse.id,
+        valueCents: appointment.priceCents,
+        appointmentId: appointment.id,
+        userId: dto.userId,
+      },
+    });
+
+    // Atualizar agendamento como concluído
+    await this.prisma.appointment.update({
+      where: { id: appointment.id },
+      data: { status: 'COMPLETED' },
+    });
+
+    return {
       status,
       mercadoPagoId: mpResponse.id,
-      valueCents: appointment.priceCents,
-      appointmentId: appointment.id,
-      userId: dto.userId,
-    },
-  });
-
-  // Atualizar agendamento como concluído
-  await this.prisma.appointment.update({
-    where: { id: appointment.id },
-    data: { status: 'COMPLETED' },
-  });
-
-  return {
-    status,
-    mercadoPagoId: mpResponse.id,
-    mock: true,
-    message: 'Pagamento mockado aprovado com sucesso',
-  };
-}
-
+      mock: true,
+      message: 'Pagamento mockado aprovado com sucesso',
+    };
+  }
 
   // -------------------------------------------------------
   // WEBHOOK DO MERCADO PAGO
@@ -110,25 +113,25 @@ async createCardPayment(dto: {
   async handleWebhook(req: any) {
     const body = req.body;
 
-    if (body.type !== "payment") return { received: true };
+    if (body.type !== 'payment') return { received: true };
 
     const mpPayment = await new MpPayment(mp).get({
       id: body.data.id,
     });
 
     const status =
-      mpPayment.status === "approved"
-        ? "APPROVED"
-        : mpPayment.status === "rejected"
-        ? "REJECTED"
-        : "PENDING";
+      mpPayment.status === 'approved'
+        ? 'APPROVED'
+        : mpPayment.status === 'rejected'
+          ? 'REJECTED'
+          : 'PENDING';
 
     await this.prisma.payment.updateMany({
       where: { mercadoPagoId: mpPayment.id?.toString() },
       data: { status },
     });
 
-    if (status === "APPROVED") {
+    if (status === 'APPROVED') {
       const payment = await this.prisma.payment.findFirst({
         where: { mercadoPagoId: mpPayment.id?.toString() },
       });
@@ -136,7 +139,7 @@ async createCardPayment(dto: {
       if (payment) {
         await this.prisma.appointment.update({
           where: { id: payment.appointmentId },
-          data: { status: "COMPLETED" },
+          data: { status: 'COMPLETED' },
         });
       }
     }

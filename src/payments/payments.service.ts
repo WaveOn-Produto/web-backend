@@ -7,14 +7,12 @@ import { Payment as MpPayment } from 'mercadopago';
 export class PaymentsService {
   constructor(private prisma: PrismaService) {}
 
-  // -------------------------------------------------------
-  // CRIAR PAGAMENTO PIX
-  // -------------------------------------------------------
+
   async createPixPayment(dto: { appointmentId: string; userId: string }) {
     const appointment = await this.prisma.appointment.findUnique({
       where: { id: dto.appointmentId },
       include: {
-        user: true, // Incluir dados do usuário para pegar o email
+        user: true, 
       },
     });
 
@@ -27,7 +25,7 @@ export class PaymentsService {
         transaction_amount: appointment.priceCents / 100,
         description: `Pagamento do serviço ${appointment.serviceType}`,
         payment_method_id: 'pix',
-        payer: { email: appointment.user.email }, // Usar email real do usuário
+        payer: { email: appointment.user.email }, 
       },
     });
 
@@ -54,9 +52,6 @@ export class PaymentsService {
     };
   }
 
-  // -------------------------------------------------------
-  // CRIAR PAGAMENTO CARTÃO (MODO MOCKADO PARA TESTES)
-  // -------------------------------------------------------
   async createCardPayment(dto: {
     appointmentId: string;
     userId: string;
@@ -71,9 +66,7 @@ export class PaymentsService {
       throw new BadRequestException('Agendamento não encontrado');
     }
 
-    // ============================================
-    // 🟦 MODO MOCKADO — simular pagamento aprovado
-    // ============================================
+
     const mpResponse = {
       id: 'MOCK_PAYMENT_ID_' + Math.random().toString(36).substring(2),
       status: 'approved',
@@ -81,7 +74,7 @@ export class PaymentsService {
 
     const status = 'APPROVED';
 
-    // Salvar pagamento no Prisma
+
     await this.prisma.payment.create({
       data: {
         type: 'CARD',
@@ -93,11 +86,7 @@ export class PaymentsService {
       },
     });
 
-    // Atualizar agendamento como concluído
-    await this.prisma.appointment.update({
-      where: { id: appointment.id },
-      data: { status: 'COMPLETED' },
-    });
+
 
     return {
       status,
@@ -107,9 +96,7 @@ export class PaymentsService {
     };
   }
 
-  // -------------------------------------------------------
-  // WEBHOOK DO MERCADO PAGO
-  // -------------------------------------------------------
+
   async handleWebhook(req: any) {
     const body = req.body;
 
@@ -137,9 +124,10 @@ export class PaymentsService {
       });
 
       if (payment) {
+    
         await this.prisma.appointment.update({
           where: { id: payment.appointmentId },
-          data: { status: 'COMPLETED' },
+          data: { status: 'SCHEDULED' },
         });
       }
     }
@@ -147,9 +135,7 @@ export class PaymentsService {
     return { success: true };
   }
 
-  // -------------------------------------------------------
-  // GET PAYMENT
-  // -------------------------------------------------------
+
   async getPayment(id: string) {
     return this.prisma.payment.findUnique({
       where: { id },

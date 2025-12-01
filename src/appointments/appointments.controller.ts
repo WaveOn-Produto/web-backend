@@ -77,7 +77,6 @@ export class AppointmentsController {
   }
 
   @Patch(':id/complete')
-  @Patch(':id/complete')
   @UseGuards(JwtAuthGuard, AdminGuard)
   async completeAppointment(@Param('id') id: string) {
     return this.apService.complete(id);

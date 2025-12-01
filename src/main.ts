@@ -17,8 +17,8 @@ async function bootstrap() {
     origin: [
       'http://localhost:3000',
       'https://web-frontend-five-red.vercel.app',
+      'https://vb-lavagens.vercel.app',
     ],
-
     credentials: true,
   });
 

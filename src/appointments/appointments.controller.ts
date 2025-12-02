@@ -81,4 +81,26 @@ export class AppointmentsController {
   async completeAppointment(@Param('id') id: string) {
     return this.apService.complete(id);
   }
+
+  // ========== ROTAS DE COMPATIBILIDADE (FRONTEND ANTIGO) ==========
+
+  @Post('/finalizarAgendamento')
+  @UseGuards(JwtAuthGuard)
+  async finalizarAgendamento(
+    @Req() req: any,
+    @Body() dto: CreateAppointmentDto,
+  ) {
+    return this.apService.create(req.user.sub, dto);
+  }
+
+  @Get(':id')
+  @UseGuards(JwtAuthGuard)
+  async getById(@Req() req: any, @Param('id') id: string) {
+    const appointments = await this.apService.getMyAppointments(req.user.sub);
+    const appointment = appointments.find((a) => a.id === id);
+    if (!appointment) {
+      throw new Error('Agendamento não encontrado');
+    }
+    return appointment;
+  }
 }
